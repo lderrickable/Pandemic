@@ -1,0 +1,793 @@
+<html ng-app="app">
+    <head>
+        <script type="text/javascript" src="angular.js"></script>
+        <script type="text/javascript" src="index_compiled.js"></script>
+        <link rel="stylesheet" type="text/css" href="app.css">
+    </head>
+    <body ng-controller="gameController">
+    
+        <div id="container">
+            <div id="menu-bar">
+                <li class="menu-item" ng-click="setup()">New Game</li>
+            </div>
+            <div id="map-area">
+                <img id="map" src="img/pandemicMap.jpg">
+                <div id="setup_game" ng-show="show===1||show===2">
+                    <img src="img/setup.png">
+                    <div id="difficulty" ng-show="show===1">
+                        <div id="text">Select Difficulty</div>
+                        <button id="introductory" ng-click="buildIntroDeck()">Introductory</button>
+                        <button id="standard" ng-click="buildStandardDeck()">Standard</button>
+                        <button id="heroic" ng-click="buildHeroicDeck()">Heroic</button>
+                    </div>
+                    <div id="number_of_players" ng-show="show===2">
+                        <input id="setup_input" type="text" placeholder="Number of Players" ng-model="numberOfPlayers">
+                        <button id="start_button" ng-click="start()">Start</button>
+                    </div>
+                </div>
+                <div id="panic" ng-show="show===665">
+                    <img src="img/epidemic.jpg">
+                    <div id="text">There has been an epidemic!</div>
+                    <button id="panic_button" ng-click="panic()">Ok</button>
+                </div>
+                <div id="epidemic_directions" ng-show="show===666">
+                    <div id="text">1. Increase the infection rate counter by 1. <br><br>2. The Infection Discard Pile has been shuffled and has been placed on top of the Infection Draw Pile. <br><br>3. Draw a card from the Infection Draw Pile and infect the indicated city with 3 disease cubes.</div>
+                    <button id="epidemic_finish" ng-click="epidemicFinish()">Done</button>
+                </div>
+                <div id="you_lose" ng-show="show===3507">
+                    <img src="img/death.jpeg">
+                    <div id="textbox">You Lose</div>
+                </div>
+                <div id="infection_cards">
+                    <img src="img/InfectionCards/Back.png">
+                    <button ng-click="drawInfect()"></button>
+                </div>
+                <div id="infection_discard">
+                    <img ng-src="{{currentInfectCard}}">
+                </div>
+                <div id="player_cards">
+                    <img src="img/PlayerDeck/Back.png">
+                    <button ng-click="drawPlayer()"></button>
+                </div>
+                <div id="discarded_cards">
+                    <img ng-src="{{discardedCards}}">
+                </div>
+                <div id="contingency_menu" ng-show="show===68">
+                    <button id = "cancel" ng-click="cancel()">X</button>
+                    <div id="text">Choose an event card:</div>
+                    <div id="event_cards">
+                        <div ng-repeat="usedEventCard in usedEventCards">
+                            <div id="event_card">
+                                <img ng-src="{{usedEventCard.eventCard}}" ng-click="contingentPlan($index)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="infect_counter_image">
+                    <div id="infect_counter"><img ng-src="img/infectCounter.png"></div>
+                </div>
+                <div id="infect_counter_buttons">
+                    <button ng-click="changeInfectCounter(6)"></button>
+                    <button ng-click="changeInfectCounter(5)"></button>
+                    <button ng-click="changeInfectCounter(4)"></button>
+                    <button ng-click="changeInfectCounter(3)"></button>
+                    <button ng-click="changeInfectCounter(2)"></button>
+                    <button ng-click="changeInfectCounter(1)"></button>
+                    <button ng-click="changeInfectCounter(0)"></button>
+                </div>
+                <div id="outbreak_counter_image">
+                    <div id="outbreak_counter"><img ng-src="img/outbreakCounter.png"></div>
+                </div>
+                <div id="outbreak_counter_buttons1">
+                    <button ng-click="changeOutbreakCounter1(0)"></button>
+                    <button ng-click="changeOutbreakCounter1(1)"></button>
+                    <button ng-click="changeOutbreakCounter1(2)"></button>
+                    <button ng-click="changeOutbreakCounter1(3)"></button>
+                    <button ng-click="changeOutbreakCounter1(4)"></button>
+                </div>
+                <div id="outbreak_counter_buttons2">
+                    <button ng-click="changeOutbreakCounter2(1)"></button>
+                    <button ng-click="changeOutbreakCounter2(2.9)"></button>
+                    <button ng-click="changeOutbreakCounter2(4.8)"></button>
+                    <button ng-click="changeOutbreakCounter2(6.5)"></button>
+                </div>
+    <!-- Manual Player Setup -->
+                <div class="info" ng-show="show===3||show===4||show===5||show===6||show2===4">
+                    <div id="beginning_drawI" ng-show="show===3">Draw {{6-numberOfPlayers}} player cards per person. Click on the player's card to draw cards for them, and only click "Done" AFTER you've finished.<br>
+                        <button ng-click="finalSetup()">Done</button>
+                    </div>
+                    <div id="beginning_drawII" ng-show="show2===4">Draw 3 infection cards and place {{ initialInfectDraw }} disease cubes of the same color on each city.<br>
+                        <button ng-click="finalSetup()">Done</button>
+                    </div>
+                </div>
+    <!-- End Manual Player Setup -->
+            </div>
+            <div id = "san_francisco">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(0)"></button>
+                <div class = "blue">{{diseaseCube[0]}}</div>
+                <div class = "red">{{diseaseCube[1]}}</div>
+                <div class = "yellow">{{diseaseCube[2]}}</div>
+                <div class = "black">{{diseaseCube[3]}}</div>
+                <div class = "research_station" ng-show="showResearch[0]">RS</div>
+                <div class = "first_player" ng-show="first===0"></div>
+                <div class = "second_player" ng-show="second===0"></div>
+                <div class = "third_player" ng-show="third===0"></div>
+                <div class = "fourth_player" ng-show="fourth===0"></div>
+            </div>
+            <div id = "chicago">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(1)"></button>
+                <div class = "blue">{{diseaseCube[4]}}</div>
+                <div class = "red">{{diseaseCube[5]}}</div>
+                <div class = "yellow">{{diseaseCube[6]}}</div>
+                <div class = "black">{{diseaseCube[7]}}</div>
+                <div class = "research_station" ng-show="showResearch[1]">RS</div>
+                <div class = "first_player" ng-show="first===1"></div>
+                <div class = "second_player" ng-show="second===1"></div>
+                <div class = "third_player" ng-show="third===1"></div>
+                <div class = "fourth_player" ng-show="fourth===1"></div>
+            </div>
+            <div id = "montreal">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(2)"></button>
+                <div class = "blue">{{diseaseCube[8]}}</div>
+                <div class = "red">{{diseaseCube[9]}}</div>
+                <div class = "yellow">{{diseaseCube[10]}}</div>
+                <div class = "black">{{diseaseCube[11]}}</div>
+                <div class = "research_station" ng-show="showResearch[2]">RS</div>
+                <div class = "first_player" ng-show="first===2"></div>
+                <div class = "second_player" ng-show="second===2"></div>
+                <div class = "third_player" ng-show="third===2"></div>
+                <div class = "fourth_player" ng-show="fourth===2"></div>
+            </div>
+            <div id = "new_york">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(3)"></button>
+                <div class = "blue">{{diseaseCube[12]}}</div>
+                <div class = "red">{{diseaseCube[13]}}</div>
+                <div class = "yellow">{{diseaseCube[14]}}</div>
+                <div class = "black">{{diseaseCube[15]}}</div>
+                <div class = "research_station" ng-show="showResearch[3]">RS</div>
+                <div class = "first_player" ng-show="first===3"></div>
+                <div class = "second_player" ng-show="second===3"></div>
+                <div class = "third_player" ng-show="third===3"></div>
+                <div class = "fourth_player" ng-show="fourth===3"></div>
+            </div>
+            <div id = "washington">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(4)"></button>
+                <div class = "blue">{{diseaseCube[16]}}</div>
+                <div class = "red">{{diseaseCube[17]}}</div>
+                <div class = "yellow">{{diseaseCube[18]}}</div>
+                <div class = "black">{{diseaseCube[19]}}</div>
+                <div class = "research_station" ng-show="showResearch[4]">RS</div>
+                <div class = "first_player" ng-show="first===4"></div>
+                <div class = "second_player" ng-show="second===4"></div>
+                <div class = "third_player" ng-show="third===4"></div>
+                <div class = "fourth_player" ng-show="fourth===4"></div>
+            </div>
+            <div id = "atlanta">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(5)"></button>
+                <div class = "blue">{{diseaseCube[20]}}</div>
+                <div class = "red">{{diseaseCube[21]}}</div>
+                <div class = "yellow">{{diseaseCube[22]}}</div>
+                <div class = "black">{{diseaseCube[23]}}</div>
+                <div class = "research_station" ng-show="showResearch[5]">RS</div>
+                <div class = "first_player" ng-show="first===5"></div>
+                <div class = "second_player" ng-show="second===5"></div>
+                <div class = "third_player" ng-show="third===5"></div>
+                <div class = "fourth_player" ng-show="fourth===5"></div>
+            </div>
+            <div id = "london">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(6)"></button>
+                <div class = "blue">{{diseaseCube[24]}}</div>
+                <div class = "red">{{diseaseCube[25]}}</div>
+                <div class = "yellow">{{diseaseCube[26]}}</div>
+                <div class = "black">{{diseaseCube[27]}}</div>
+                <div class = "research_station" ng-show="showResearch[6]">RS</div>
+                <div class = "first_player" ng-show="first===6"></div>
+                <div class = "second_player" ng-show="second===6"></div>
+                <div class = "third_player" ng-show="third===6"></div>
+                <div class = "fourth_player" ng-show="fourth===6"></div>
+            </div>
+            <div id = "essen">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(7)"></button>
+                <div class = "blue">{{diseaseCube[28]}}</div>
+                <div class = "red">{{diseaseCube[29]}}</div>
+                <div class = "yellow">{{diseaseCube[30]}}</div>
+                <div class = "black">{{diseaseCube[31]}}</div>
+                <div class = "research_station" ng-show="showResearch[7]">RS</div>
+                <div class = "first_player" ng-show="first===7"></div>
+                <div class = "second_player" ng-show="second===7"></div>
+                <div class = "third_player" ng-show="third===7"></div>
+                <div class = "fourth_player" ng-show="fourth===7"></div>
+            </div>
+            <div id = "st_petersburg">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(8)"></button>
+                <div class = "blue">{{diseaseCube[32]}}</div>
+                <div class = "red">{{diseaseCube[33]}}</div>
+                <div class = "yellow">{{diseaseCube[34]}}</div>
+                <div class = "black">{{diseaseCube[35]}}</div>
+                <div class = "research_station" ng-show="showResearch[8]">RS</div>
+                <div class = "first_player" ng-show="first===8"></div>
+                <div class = "second_player" ng-show="second===8"></div>
+                <div class = "third_player" ng-show="third===8"></div>
+                <div class = "fourth_player" ng-show="fourth===8"></div>
+            </div>
+            <div id = "milan">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(9)"></button>
+                <div class = "blue">{{diseaseCube[36]}}</div>
+                <div class = "red">{{diseaseCube[37]}}</div>
+                <div class = "yellow">{{diseaseCube[38]}}</div>
+                <div class = "black">{{diseaseCube[39]}}</div>
+                <div class = "research_station" ng-show="showResearch[9]">RS</div>
+                <div class = "first_player" ng-show="first===9"></div>
+                <div class = "second_player" ng-show="second===9"></div>
+                <div class = "third_player" ng-show="third===9"></div>
+                <div class = "fourth_player" ng-show="fourth===9"></div>
+            </div>
+            <div id = "paris">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(10)"></button>
+                <div class = "blue">{{diseaseCube[40]}}</div>
+                <div class = "red">{{diseaseCube[41]}}</div>
+                <div class = "yellow">{{diseaseCube[42]}}</div>
+                <div class = "black">{{diseaseCube[43]}}</div>
+                <div class = "research_station" ng-show="showResearch[10]">RS</div>
+                <div class = "first_player" ng-show="first===10"></div>
+                <div class = "second_player" ng-show="second===10"></div>
+                <div class = "third_player" ng-show="third===10"></div>
+                <div class = "fourth_player" ng-show="fourth===10"></div>
+            </div>
+            <div id = "madrid">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(11)"></button>
+                <div class = "blue">{{diseaseCube[44]}}</div>
+                <div class = "red">{{diseaseCube[45]}}</div>
+                <div class = "yellow">{{diseaseCube[46]}}</div>
+                <div class = "black">{{diseaseCube[47]}}</div>
+                <div class = "research_station" ng-show="showResearch[11]">RS</div>
+                <div class = "first_player" ng-show="first===11"></div>
+                <div class = "second_player" ng-show="second===11"></div>
+                <div class = "third_player" ng-show="third===11"></div>
+                <div class = "fourth_player" ng-show="fourth===11"></div>
+            </div>
+            <div id = "los_angeles">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(12)"></button>
+                <div class = "blue">{{diseaseCube[48]}}</div>
+                <div class = "red">{{diseaseCube[49]}}</div>
+                <div class = "yellow">{{diseaseCube[50]}}</div>
+                <div class = "black">{{diseaseCube[51]}}</div>
+                <div class = "research_station" ng-show="showResearch[12]">RS</div>
+                <div class = "first_player" ng-show="first===12"></div>
+                <div class = "second_player" ng-show="second===12"></div>
+                <div class = "third_player" ng-show="third===12"></div>
+                <div class = "fourth_player" ng-show="fourth===12"></div>
+            </div>
+            <div id = "mexico_city">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(13)"></button>
+                <div class = "blue">{{diseaseCube[52]}}</div>
+                <div class = "red">{{diseaseCube[53]}}</div>
+                <div class = "yellow">{{diseaseCube[54]}}</div>
+                <div class = "black">{{diseaseCube[55]}}</div>
+                <div class = "research_station" ng-show="showResearch[13]">RS</div>
+                <div class = "first_player" ng-show="first===13"></div>
+                <div class = "second_player" ng-show="second===13"></div>
+                <div class = "third_player" ng-show="third===13"></div>
+                <div class = "fourth_player" ng-show="fourth===13"></div>
+            </div>
+            <div id = "miami">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(14)"></button>
+                <div class = "blue">{{diseaseCube[56]}}</div>
+                <div class = "red">{{diseaseCube[57]}}</div>
+                <div class = "yellow">{{diseaseCube[58]}}</div>
+                <div class = "black">{{diseaseCube[59]}}</div>
+                <div class = "research_station" ng-show="showResearch[14]">RS</div>
+                <div class = "first_player" ng-show="first===14"></div>
+                <div class = "second_player" ng-show="second===14"></div>
+                <div class = "third_player" ng-show="third===14"></div>
+                <div class = "fourth_player" ng-show="fourth===14"></div>
+            </div>
+            <div id = "bogota">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(15)"></button>
+                <div class = "blue">{{diseaseCube[60]}}</div>
+                <div class = "red">{{diseaseCube[61]}}</div>
+                <div class = "yellow">{{diseaseCube[62]}}</div>
+                <div class = "black">{{diseaseCube[63]}}</div>
+                <div class = "research_station" ng-show="showResearch[15]">RS</div>
+                <div class = "first_player" ng-show="first===15"></div>
+                <div class = "second_player" ng-show="second===15"></div>
+                <div class = "third_player" ng-show="third===15"></div>
+                <div class = "fourth_player" ng-show="fourth===15"></div>
+            </div>
+            <div id = "lima">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(16)"></button>
+                <div class = "blue">{{diseaseCube[64]}}</div>
+                <div class = "red">{{diseaseCube[65]}}</div>
+                <div class = "yellow">{{diseaseCube[66]}}</div>
+                <div class = "black">{{diseaseCube[67]}}</div>
+                <div class = "research_station" ng-show="showResearch[16]">RS</div>
+                <div class = "first_player" ng-show="first===16"></div>
+                <div class = "second_player" ng-show="second===16"></div>
+                <div class = "third_player" ng-show="third===16"></div>
+                <div class = "fourth_player" ng-show="fourth===16"></div>
+            </div>
+            <div id = "santiago">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(17)"></button>
+                <div class = "blue">{{diseaseCube[68]}}</div>
+                <div class = "red">{{diseaseCube[69]}}</div>
+                <div class = "yellow">{{diseaseCube[70]}}</div>
+                <div class = "black">{{diseaseCube[71]}}</div>
+                <div class = "research_station" ng-show="showResearch[17]">RS</div>
+                <div class = "first_player" ng-show="first===17"></div>
+                <div class = "second_player" ng-show="second===17"></div>
+                <div class = "third_player" ng-show="third===17"></div>
+                <div class = "fourth_player" ng-show="fourth===17"></div>
+            </div>
+            <div id = "sao_paulo">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(18)"></button>
+                <div class = "blue">{{diseaseCube[72]}}</div>
+                <div class = "red">{{diseaseCube[73]}}</div>
+                <div class = "yellow">{{diseaseCube[74]}}</div>
+                <div class = "black">{{diseaseCube[75]}}</div>
+                <div class = "research_station" ng-show="showResearch[18]">RS</div>
+                <div class = "first_player" ng-show="first===18"></div>
+                <div class = "second_player" ng-show="second===18"></div>
+                <div class = "third_player" ng-show="third===18"></div>
+                <div class = "fourth_player" ng-show="fourth===18"></div>
+            </div>
+            <div id = "buenos_aires">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(19)"></button>
+                <div class = "blue">{{diseaseCube[76]}}</div>
+                <div class = "red">{{diseaseCube[77]}}</div>
+                <div class = "yellow">{{diseaseCube[78]}}</div>
+                <div class = "black">{{diseaseCube[79]}}</div>
+                <div class = "research_station" ng-show="showResearch[19]">RS</div>
+                <div class = "first_player" ng-show="first===19"></div>
+                <div class = "second_player" ng-show="second===19"></div>
+                <div class = "third_player" ng-show="third===19"></div>
+                <div class = "fourth_player" ng-show="fourth===19"></div>
+            </div>
+            <div id = "lagos">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(20)"></button>
+                <div class = "blue">{{diseaseCube[80]}}</div>
+                <div class = "red">{{diseaseCube[81]}}</div>
+                <div class = "yellow">{{diseaseCube[82]}}</div>
+                <div class = "black">{{diseaseCube[83]}}</div>
+                <div class = "research_station" ng-show="showResearch[20]">RS</div>
+                <div class = "first_player" ng-show="first===20"></div>
+                <div class = "second_player" ng-show="second===20"></div>
+                <div class = "third_player" ng-show="third===20"></div>
+                <div class = "fourth_player" ng-show="fourth===20"></div>
+            </div>
+            <div id = "khartoum">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(21)"></button>
+                <div class = "blue">{{diseaseCube[84]}}</div>
+                <div class = "red">{{diseaseCube[85]}}</div>
+                <div class = "yellow">{{diseaseCube[86]}}</div>
+                <div class = "black">{{diseaseCube[87]}}</div>
+                <div class = "research_station" ng-show="showResearch[21]">RS</div>
+                <div class = "first_player" ng-show="first===21"></div>
+                <div class = "second_player" ng-show="second===21"></div>
+                <div class = "third_player" ng-show="third===21"></div>
+                <div class = "fourth_player" ng-show="fourth===21"></div>
+            </div>
+            <div id = "kinshasa">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(22)"></button>
+                <div class = "blue">{{diseaseCube[88]}}</div>
+                <div class = "red">{{diseaseCube[89]}}</div>
+                <div class = "yellow">{{diseaseCube[90]}}</div>
+                <div class = "black">{{diseaseCube[91]}}</div>
+                <div class = "research_station" ng-show="showResearch[22]">RS</div>
+                <div class = "first_player" ng-show="first===22"></div>
+                <div class = "second_player" ng-show="second===22"></div>
+                <div class = "third_player" ng-show="third===22"></div>
+                <div class = "fourth_player" ng-show="fourth===22"></div>
+            </div>
+            <div id = "johannesburg">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(23)"></button>
+                <div class = "blue">{{diseaseCube[92]}}</div>
+                <div class = "red">{{diseaseCube[93]}}</div>
+                <div class = "yellow">{{diseaseCube[94]}}</div>
+                <div class = "black">{{diseaseCube[95]}}</div>
+                <div class = "research_station" ng-show="showResearch[23]">RS</div>
+                <div class = "first_player" ng-show="first===23"></div>
+                <div class = "second_player" ng-show="second===23"></div>
+                <div class = "third_player" ng-show="third===23"></div>
+                <div class = "fourth_player" ng-show="fourth===23"></div>
+            </div>
+            <div id = "algiers">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(24)"></button>
+                <div class = "blue">{{diseaseCube[96]}}</div>
+                <div class = "red">{{diseaseCube[97]}}</div>
+                <div class = "yellow">{{diseaseCube[98]}}</div>
+                <div class = "black">{{diseaseCube[99]}}</div>
+                <div class = "research_station" ng-show="showResearch[24]">RS</div>
+                '<div class = "first_player" ng-show="first===24"></div>
+                <div class = "second_player" ng-show="second===24"></div>
+                <div class = "third_player" ng-show="third===24"></div>
+                <div class = "fourth_player" ng-show="fourth===24"></div>'
+            </div>
+            <div id = "istanbul">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(25)"></button>
+                <div class = "blue">{{diseaseCube[100]}}</div>
+                <div class = "red">{{diseaseCube[101]}}</div>
+                <div class = "yellow">{{diseaseCube[102]}}</div>
+                <div class = "black">{{diseaseCube[103]}}</div>
+                <div class = "research_station" ng-show="showResearch[25]">RS</div>
+                <div class = "first_player" ng-show="first===25"></div>
+                <div class = "second_player" ng-show="second===25"></div>
+                <div class = "third_player" ng-show="third===25"></div>
+                <div class = "fourth_player" ng-show="fourth===25"></div>
+            </div>
+            <div id = "moscow">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(26)"></button>
+                <div class = "blue">{{diseaseCube[104]}}</div>
+                <div class = "red">{{diseaseCube[105]}}</div>
+                <div class = "yellow">{{diseaseCube[106]}}</div>
+                <div class = "black">{{diseaseCube[107]}}</div>
+                <div class = "research_station" ng-show="showResearch[26]">RS</div>
+                <div class = "first_player" ng-show="first===26"></div>
+                <div class = "second_player" ng-show="second===26"></div>
+                <div class = "third_player" ng-show="third===26"></div>
+                <div class = "fourth_player" ng-show="fourth===26"></div>
+            </div>
+            <div id = "tehran">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(27)"></button>
+                <div class = "blue">{{diseaseCube[108]}}</div>
+                <div class = "red">{{diseaseCube[109]}}</div>
+                <div class = "yellow">{{diseaseCube[110]}}</div>
+                <div class = "black">{{diseaseCube[111]}}</div>
+                <div class = "research_station" ng-show="showResearch[27]">RS</div>
+                <div class = "first_player" ng-show="first===27"></div>
+                <div class = "second_player" ng-show="second===27"></div>
+                <div class = "third_player" ng-show="third===27"></div>
+                <div class = "fourth_player" ng-show="fourth===27"></div>
+            </div>
+            <div id = "baghdad">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(28)"></button>
+                <div class = "blue">{{diseaseCube[112]}}</div>
+                <div class = "red">{{diseaseCube[113]}}</div>
+                <div class = "yellow">{{diseaseCube[114]}}</div>
+                <div class = "black">{{diseaseCube[115]}}</div>
+                <div class = "research_station" ng-show="showResearch[28]">RS</div>
+                <div class = "first_player" ng-show="first===28"></div>
+                <div class = "second_player" ng-show="second===28"></div>
+                <div class = "third_player" ng-show="third===28"></div>
+                <div class = "fourth_player" ng-show="fourth===28"></div>
+            </div>
+            <div id = "cairo">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(29)"></button>
+                <div class = "blue">{{diseaseCube[116]}}</div>
+                <div class = "red">{{diseaseCube[117]}}</div>
+                <div class = "yellow">{{diseaseCube[118]}}</div>
+                <div class = "black">{{diseaseCube[119]}}</div>
+                <div class = "research_station" ng-show="showResearch[29]">RS</div>
+                <div class = "first_player" ng-show="first===29"></div>
+                <div class = "second_player" ng-show="second===29"></div>
+                <div class = "third_player" ng-show="third===29"></div>
+                <div class = "fourth_player" ng-show="fourth===29"></div>
+            </div>
+            <div id = "riyadh">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(30)"></button>
+                <div class = "blue">{{diseaseCube[120]}}</div>
+                <div class = "red">{{diseaseCube[121]}}</div>
+                <div class = "yellow">{{diseaseCube[122]}}</div>
+                <div class = "black">{{diseaseCube[123]}}</div>
+                <div class = "research_station" ng-show="showResearch[30]">RS</div>
+                <div class = "first_player" ng-show="first===30"></div>
+                <div class = "second_player" ng-show="second===30"></div>
+                <div class = "third_player" ng-show="third===30"></div>
+                <div class = "fourth_player" ng-show="fourth===30"></div>
+            </div>
+            <div id = "karachi">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(31)"></button>
+                <div class = "blue">{{diseaseCube[124]}}</div>
+                <div class = "red">{{diseaseCube[125]}}</div>
+                <div class = "yellow">{{diseaseCube[126]}}</div>
+                <div class = "black">{{diseaseCube[127]}}</div>
+                <div class = "research_station" ng-show="showResearch[31]">RS</div>
+                <div class = "first_player" ng-show="first===31"></div>
+                <div class = "second_player" ng-show="second===31"></div>
+                <div class = "third_player" ng-show="third===31"></div>
+                <div class = "fourth_player" ng-show="fourth===31"></div>
+            </div>
+            <div id = "delhi">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(32)"></button>
+                <div class = "blue">{{diseaseCube[128]}}</div>
+                <div class = "red">{{diseaseCube[129]}}</div>
+                <div class = "yellow">{{diseaseCube[130]}}</div>
+                <div class = "black">{{diseaseCube[131]}}</div>
+                <div class = "research_station" ng-show="showResearch[32]">RS</div>
+                <div class = "first_player" ng-show="first===32"></div>
+                <div class = "second_player" ng-show="second===32"></div>
+                <div class = "third_player" ng-show="third===32"></div>
+                <div class = "fourth_player" ng-show="fourth===32"></div>
+            </div>
+            <div id = "kolkata">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(33)"></button>
+                <div class = "blue">{{diseaseCube[132]}}</div>
+                <div class = "red">{{diseaseCube[133]}}</div>
+                <div class = "yellow">{{diseaseCube[134]}}</div>
+                <div class = "black">{{diseaseCube[135]}}</div>
+                <div class = "research_station" ng-show="showResearch[33]">RS</div>
+                <div class = "first_player" ng-show="first===33"></div>
+                <div class = "second_player" ng-show="second===33"></div>
+                <div class = "third_player" ng-show="third===33"></div>
+                <div class = "fourth_player" ng-show="fourth===33"></div>
+            </div>
+            <div id = "mumbai">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(34)"></button>
+                <div class = "blue">{{diseaseCube[136]}}</div>
+                <div class = "red">{{diseaseCube[137]}}</div>
+                <div class = "yellow">{{diseaseCube[138]}}</div>
+                <div class = "black">{{diseaseCube[139]}}</div>
+                <div class = "research_station" ng-show="showResearch[34]">RS</div>
+                <div class = "first_player" ng-show="first===34"></div>
+                <div class = "second_player" ng-show="second===34"></div>
+                <div class = "third_player" ng-show="third===34"></div>
+                <div class = "fourth_player" ng-show="fourth===34"></div>
+            </div>
+            <div id = "chennai">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(35)"></button>
+                <div class = "blue">{{diseaseCube[140]}}</div>
+                <div class = "red">{{diseaseCube[141]}}</div>
+                <div class = "yellow">{{diseaseCube[142]}}</div>
+                <div class = "black">{{diseaseCube[143]}}</div>
+                <div class = "research_station" ng-show="showResearch[35]">RS</div>
+                <div class = "first_player" ng-show="first===35"></div>
+                <div class = "second_player" ng-show="second===35"></div>
+                <div class = "third_player" ng-show="third===35"></div>
+                <div class = "fourth_player" ng-show="fourth===35"></div>
+            </div>
+            <div id = "beijing">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(36)"></button>
+                <div class = "blue">{{diseaseCube[144]}}</div>
+                <div class = "red">{{diseaseCube[145]}}</div>
+                <div class = "yellow">{{diseaseCube[146]}}</div>
+                <div class = "black">{{diseaseCube[147]}}</div>
+                <div class = "research_station" ng-show="showResearch[36]">RS</div>
+                <div class = "first_player" ng-show="first===36"></div>
+                <div class = "second_player" ng-show="second===36"></div>
+                <div class = "third_player" ng-show="third===36"></div>
+                <div class = "fourth_player" ng-show="fourth===36"></div>
+            </div>
+            <div id = "seoul">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(37)"></button>
+                <div class = "blue">{{diseaseCube[148]}}</div>
+                <div class = "red">{{diseaseCube[149]}}</div>
+                <div class = "yellow">{{diseaseCube[150]}}</div>
+                <div class = "black">{{diseaseCube[151]}}</div>
+                <div class = "research_station" ng-show="showResearch[37]">RS</div>
+                <div class = "first_player" ng-show="first===37"></div>
+                <div class = "second_player" ng-show="second===37"></div>
+                <div class = "third_player" ng-show="third===37"></div>
+                <div class = "fourth_player" ng-show="fourth===37"></div>
+            </div>
+            <div id = "tokyo">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(38)"></button>
+                <div class = "blue">{{diseaseCube[152]}}</div>
+                <div class = "red">{{diseaseCube[153]}}</div>
+                <div class = "yellow">{{diseaseCube[154]}}</div>
+                <div class = "black">{{diseaseCube[155]}}</div>
+                <div class = "research_station" ng-show="showResearch[38]">RS</div>
+                <div class = "first_player" ng-show="first===38"></div>
+                <div class = "second_player" ng-show="second===38"></div>
+                <div class = "third_player" ng-show="third===38"></div>
+                <div class = "fourth_player" ng-show="fourth===38"></div>
+            </div>
+            <div id = "shanghai">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(39)"></button>
+                <div class = "blue">{{diseaseCube[156]}}</div>
+                <div class = "red">{{diseaseCube[157]}}</div>
+                <div class = "yellow">{{diseaseCube[158]}}</div>
+                <div class = "black">{{diseaseCube[159]}}</div>
+                <div class = "research_station" ng-show="showResearch[39]">RS</div>
+                <div class = "first_player" ng-show="first===39"></div>
+                <div class = "second_player" ng-show="second===39"></div>
+                <div class = "third_player" ng-show="third===39"></div>
+                <div class = "fourth_player" ng-show="fourth===39"></div>
+            </div>
+            <div id = "hong_kong">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(40)"></button>
+                <div class = "blue">{{diseaseCube[160]}}</div>
+                <div class = "red">{{diseaseCube[161]}}</div>
+                <div class = "yellow">{{diseaseCube[162]}}</div>
+                <div class = "black">{{diseaseCube[163]}}</div>
+                <div class = "research_station" ng-show="showResearch[40]">RS</div>
+                <div class = "first_player" ng-show="first===40"></div>
+                <div class = "second_player" ng-show="second===40"></div>
+                <div class = "third_player" ng-show="third===40"></div>
+                <div class = "fourth_player" ng-show="fourth===40"></div>
+            </div>
+            <div id = "taipei">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(41)"></button>
+                <div class = "blue">{{diseaseCube[164]}}</div>
+                <div class = "red">{{diseaseCube[165]}}</div>
+                <div class = "yellow">{{diseaseCube[166]}}</div>
+                <div class = "black">{{diseaseCube[167]}}</div>
+                <div class = "research_station" ng-show="showResearch[41]">RS</div>
+                <div class = "first_player" ng-show="first===41"></div>
+                <div class = "second_player" ng-show="second===41"></div>
+                <div class = "third_player" ng-show="third===41"></div>
+                <div class = "fourth_player" ng-show="fourth===41"></div>
+            </div>
+            <div id = "osaka">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(42)"></button>
+                <div class = "blue">{{diseaseCube[168]}}</div>
+                <div class = "red">{{diseaseCube[169]}}</div>
+                <div class = "yellow">{{diseaseCube[170]}}</div>
+                <div class = "black">{{diseaseCube[171]}}</div>
+                <div class = "research_station" ng-show="showResearch[42]">RS</div>
+                <div class = "first_player" ng-show="first===42"></div>
+                <div class = "second_player" ng-show="second===42"></div>
+                <div class = "third_player" ng-show="third===42"></div>
+                <div class = "fourth_player" ng-show="fourth===42"></div>
+            </div>
+            <div id = "bangkok">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(43)"></button>
+                <div class = "blue">{{diseaseCube[172]}}</div>
+                <div class = "red">{{diseaseCube[173]}}</div>
+                <div class = "yellow">{{diseaseCube[174]}}</div>
+                <div class = "black">{{diseaseCube[175]}}</div>
+                <div class = "research_station" ng-show="showResearch[43]">RS</div>
+                <div class = "first_player" ng-show="first===43"></div>
+                <div class = "second_player" ng-show="second===43"></div>
+                <div class = "third_player" ng-show="third===43"></div>
+                <div class = "fourth_player" ng-show="fourth===43"></div>
+            </div>
+            <div id = "manila">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(44)"></button>
+                <div class = "blue">{{diseaseCube[176]}}</div>
+                <div class = "red">{{diseaseCube[177]}}</div>
+                <div class = "yellow">{{diseaseCube[178]}}</div>
+                <div class = "black">{{diseaseCube[179]}}</div>
+                <div class = "research_station" ng-show="showResearch[44]">RS</div>
+                <div class = "first_player" ng-show="first===44"></div>
+                <div class = "second_player" ng-show="second===44"></div>
+                <div class = "third_player" ng-show="third===44"></div>
+                <div class = "fourth_player" ng-show="fourth===44"></div>
+            </div>
+            <div id = "ho_chi_minh">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(45)"></button>
+                <div class = "blue">{{diseaseCube[180]}}</div>
+                <div class = "red">{{diseaseCube[181]}}</div>
+                <div class = "yellow">{{diseaseCube[182]}}</div>
+                <div class = "black">{{diseaseCube[183]}}</div>
+                <div class = "research_station" ng-show="showResearch[45]">RS</div>
+                <div class = "first_player" ng-show="first===45"></div>
+                <div class = "second_player" ng-show="second===45"></div>
+                <div class = "third_player" ng-show="third===45"></div>
+                <div class = "fourth_player" ng-show="fourth===45"></div>
+            </div>
+            <div id = "jakarta">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(46)"></button>
+                <div class = "blue">{{diseaseCube[184]}}</div>
+                <div class = "red">{{diseaseCube[185]}}</div>
+                <div class = "yellow">{{diseaseCube[186]}}</div>
+                <div class = "black">{{diseaseCube[187]}}</div>
+                <div class = "research_station" ng-show="showResearch[46]">RS</div>
+                <div class = "first_player" ng-show="first===46"></div>
+                <div class = "second_player" ng-show="second===46"></div>
+                <div class = "third_player" ng-show="third===46"></div>
+                <div class = "fourth_player" ng-show="fourth===46"></div>
+            </div>
+            <div id = "sydney">
+                <div class = "background"></div>
+                <button class="city_button" ng-click="citySelector(47)"></button>
+                <div class = "blue">{{diseaseCube[188]}}</div>
+                <div class = "red">{{diseaseCube[189]}}</div>
+                <div class = "yellow">{{diseaseCube[190]}}</div>
+                <div class = "black">{{diseaseCube[191]}}</div>
+                <div class = "research_station" ng-show="showResearch[47]">RS</div>
+                <div class = "first_player" ng-show="first===47"></div>
+                <div class = "second_player" ng-show="second===47"></div>
+                <div class = "third_player" ng-show="third===47"></div>
+                <div class = "fourth_player" ng-show="fourth===47"></div>
+            </div>
+            <div id = "disease_cube_menu" ng-show="show===100">
+                <button id = "cancel" ng-click="cancel()">X</button>
+                <div id = "text">Whatcha wanna do?</div>
+                <button id = "blue_add" ng-click="addCube(0)">+Blue Cube</button>
+                <button id = "red_add" ng-click="addCube(1)">+Red Cube</button>
+                <button id = "yellow_add" ng-click="addCube(2)">+Yellow Cube</button>
+                <button id = "black_add" ng-click="addCube(3)">+Black Cube</button>
+                <button id = "blue_subtract" ng-click="addCube(4)">-Blue Cube</button>
+                <button id = "red_subtract" ng-click="addCube(5)">-Red Cube</button>
+                <button id = "yellow_subtract" ng-click="addCube(6)">-Yellow Cube</button>
+                <button id = "black_subtract" ng-click="addCube(7)">-Black Cube</button>
+                <button id = "research_add" ng-click="addResearchStation()">Add Research Station</button>
+                <button id = "research_unadd" ng-click="removeResearchStation()">Remove Research Station</button>
+                <button id = "move_player" ng-click="movePlayer()">Move Player</button>
+            </div>
+            <div id = "disease_cube_menu" ng-show="show===7">
+                <button id = "cancel" ng-click="cancel()">X</button>
+                <div id = "text">Choose an Action</div>
+                <button id = "use" ng-click="useCard()">Use Event Card</button>
+                <button id = "give" ng-click="giveCard()">Give City Card</button>
+                <button id = "discard" ng-click="discardCard()">Discard City Card</button>
+            </div>
+            <div id="give_menu" ng-show="show===20">
+                <div id = "text">Give card to whom?</div>
+                <button id = "give" ng-click="giveTo(0)">Player 1</button>
+                <button id = "give" ng-click="giveTo(1)">Player 2</button>
+                <button id = "give" ng-click="giveTo(2)">Player 3</button>
+                <button id = "give" ng-click="giveTo(3)">Player 4</button>
+            </div>
+            <div id="forecastImgs" ng-show="showForecast===90">
+                <div id = "text">Choose the order of cards to be drawn starting with the first card.</div>
+                <img ng-src="{{forecastImgs[0]}}">
+                <img ng-src="{{forecastImgs[1]}}">
+                <img ng-src="{{forecastImgs[2]}}">
+                <img ng-src="{{forecastImgs[3]}}">
+                <img ng-src="{{forecastImgs[4]}}">
+                <img ng-src="{{forecastImgs[5]}}">
+            </div>
+            <div id="forecastButtons" ng-show="showForecast===90">
+                <div id = "text">Choose the order of cards to be drawn starting with the first card.</div>
+                <button id="button0" ng-click="forecastInfection(0)"></button>
+                <button id="button1" ng-click="forecastInfection(1)"></button>
+                <button id="button2" ng-click="forecastInfection(2)"></button>
+                <button id="button3" ng-click="forecastInfection(3)"></button>
+                <button id="button4" ng-click="forecastInfection(4)"></button>
+                <button id="button5" ng-click="forecastInfection(5)"></button>
+            </div>
+        </div>
+    <!-- Right Panel for displaying each player's cards -->
+        <div id="profiles">
+            <div ng-repeat="player in players" class="player_space" ng-style="{'backgroundColor':playerTurnHighlight[$index]}">
+                <div id="role_card">
+                    <img ng-src="{{ player.role_card }}" ng-click="playerTurnChange($index)">
+                </div>
+                <div id="used_events" ng-show="player.role_card==='img/RoleCards/ContingencyPlanner.jpg'">
+                    <img ng-src="{{contingencyCard}}" ng-click="contingentDetour()">
+                    <button ng-click="usedEvent()">Special<br>Ability</button>
+                </div>
+                <div id="player_card" ng-repeat="player_card in player.player_cards">
+                    <img ng-src="{{player_card.playerCard}}" ng-click="cardActionMenu($index)">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
