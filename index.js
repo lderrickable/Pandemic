@@ -69,7 +69,6 @@ app.controller('gameController',['$scope',function($scope){
 	var PlayerDeck2 = {data:'img/PlayerDeck/city_Atlanta.png',next:PlayerDeck3};
 	var PlayerDeck1 = {data:'img/PlayerDeck/city_Algiers.png',next:PlayerDeck2};
 	var PlayerDeck0 = {data:'img/PlayerDeck/SE_ResilientPopulation.png',next:PlayerDeck1};
-	console.log(PlayerDeck0)
 	var startPlayerDeck = PlayerDeck0;
 	var endPlayerDeck = PlayerDeck58;
 // A group of variables and arrays, which are involved in the drawing of Player Cards or are used to navigate
@@ -141,14 +140,15 @@ app.controller('gameController',['$scope',function($scope){
 	var startInfectDeck = infectDeck0;
 	var endInfectDeck = infectDeck47;
 	var activeInfectDeck = [];
-// The activeInfectDeck changes when an epidemic occurs (+1) or when the deck runs out of cards (-1).
+// The activeInfectDeck changes when an epidemic occurs (currentInfectDeck+1) or when the deck 
+// runs out of cards (currentInfectDeck-1).
 	activeInfectDeck[0] = 47;
 	activeInfectDeck[1] = 0;
 	activeInfectDeck[2] = 0;
 	activeInfectDeck[3] = 0;
 	var currentInfectDeck = 0;
 
-/********************setup***********************************/
+// Setup of holding card positions of players and of the repository of Contingency Planner usedEventCards.
 	$scope.setup=function(){
 		$scope.show = 1;
 		for(var i=0;i<32;i++){
@@ -183,7 +183,10 @@ app.controller('gameController',['$scope',function($scope){
 		$scope.show = 4;
 		$scope.show2 = 4;
 		$scope.initialInfectDraw--;
-		if($scope.initialInfectDraw===0) $scope.show = 0;
+		if($scope.initialInfectDraw===0){
+			$scope.show = 0;
+			$scope.show2=0;
+		}
 		// activePlayerDeck will equal 45 when the number of players is 2 or 4, and will be 44 when the
 		// number of players is 3. This is based on the number of initially drawn infection cards, which is
 		// 8 for 2 and 4 players and is 9 for a three player game. For an explanation of why we're adding the
@@ -191,7 +194,6 @@ app.controller('gameController',['$scope',function($scope){
 		if(activePlayerDeck===45 || activePlayerDeck===44) activePlayerDeck = activePlayerDeck+addEpidemicCards;
 		$scope.insertInitialEpidemicCards = 1;
 		$scope.epidemicProbabilityPerm = $scope.epidemicProbability;
-		if($scope.initialInfectDraw===0) $scope.show2=0;
 	};
 
 // Arrays involved in the drawing of initial roleCards
@@ -201,11 +203,10 @@ app.controller('gameController',['$scope',function($scope){
 	$scope.playerRole = [];
 	$scope.playerColors = [];
 
-// function, which must be called to update the player profile panel.
+// function, which must be called to update the player profile panel. The primary "model" of the MVC.
 	$scope.updatePlayers = function(){
 		$scope.players = [
 			{"role_card": $scope.playerRole[0],
-			"playerTurn": 0,
 			"player_cards": [{"playerCard":$scope.holdingCards[0]},
 							 {"playerCard":$scope.holdingCards[1]},
 							 {"playerCard":$scope.holdingCards[2]},
@@ -216,7 +217,6 @@ app.controller('gameController',['$scope',function($scope){
 							 {"playerCard":$scope.holdingCards[7]}]
 																	},
 			{"role_card": $scope.playerRole[1],
-			"playerTurn": 1,
 			"player_cards": [{"playerCard":$scope.holdingCards[8]},
 							 {"playerCard":$scope.holdingCards[9]},
 							 {"playerCard":$scope.holdingCards[10]},
@@ -227,7 +227,6 @@ app.controller('gameController',['$scope',function($scope){
 							 {"playerCard":$scope.holdingCards[15]}]
 																	},
 			{"role_card": $scope.playerRole[2],
-			"playerTurn": 2,
 			"player_cards": [{"playerCard":$scope.holdingCards[16]},
 							 {"playerCard":$scope.holdingCards[17]},
 							 {"playerCard":$scope.holdingCards[18]},
@@ -238,7 +237,6 @@ app.controller('gameController',['$scope',function($scope){
 							 {"playerCard":$scope.holdingCards[23]}]
 																	},
 			{"role_card": $scope.playerRole[3],
-			"playerTurn": 3,
 			"player_cards": [{"playerCard":$scope.holdingCards[24]},
 							 {"playerCard":$scope.holdingCards[25]},
 							 {"playerCard":$scope.holdingCards[26]},
@@ -272,7 +270,7 @@ app.controller('gameController',['$scope',function($scope){
 		$scope.fourth = 5;
 		var roleColors = [];
 		/*---------------role cards draw-----------------------------*/
-			/*--an array for random drawing of role cards-*/
+			/*--arrays for random drawing of role cards-*/
 			roleCards[0] = 'img/RoleCards/Scientist.png';
 			roleColors[0] = "white";
 			roleCards[1] = 'img/RoleCards/Researcher.png';
@@ -287,7 +285,8 @@ app.controller('gameController',['$scope',function($scope){
 			roleColors[5] = "purple";
 			roleCards[6] = 'img/RoleCards/ContingencyPlanner.jpg';
 			roleColors[6] = "#2EFFF5";
-
+		// Perhaps needlessly complicated, the following for-loop simply draws a random Role Card. The second,
+		// embedded for-loop makes it impossible for that card to be drawn for any of the other players.
 		for(var i=0;i<$scope.numberOfPlayers;i++){
 			roleDraw = Math.floor(Math.random()*(7-i));
 			$scope.playerRole[i] = roleCards[roleDraw];
@@ -334,7 +333,7 @@ app.controller('gameController',['$scope',function($scope){
 // ordinary holdingCard, then this function just assigns the numbered position of the card (0-7) to the
 // scope. However, if the card in question is the event card being specially held by the Contingency Planner,
 // then the image source of the card is assigned the currentCard variable. Then it brings up the Card Action
-// Menu, which is actually label "disease_cube_menu" in the html.
+// Menu, which is actually labeled "disease_cube_menu" in the html.
 	$scope.cardActionMenu = function(currentCard){
 		if($scope.contingency===1){
 			$scope.currentCard = $scope.contingencyCard;
@@ -372,7 +371,7 @@ app.controller('gameController',['$scope',function($scope){
 		// has not been drawn in this section of the player deck, then automatically call epidemic() and
 		// remove one epidemic card from the activePlayerDeck. The logic in this code is based around the
 		// fact that if an epidemic has not been drawn in the current section, and there are yet some epidemic
-		// cards to be played in the game, then the last card of the activePlayerDeck will always be an
+		// cards to be played in the game, then the last card of the current section will always be an
 		// epidemic. 
 		var numRand = Math.floor(Math.random()*(activePlayerDeck));
 		if($scope.epidemicProbability===0){
@@ -435,12 +434,6 @@ app.controller('gameController',['$scope',function($scope){
 		}
 	}
 // Functions called when an epidemic occurs.
-	$scope.panic = function(){
-		$scope.show = 666;
-		scream.pause();
-		scream.currentTime = 0;
-		audio.play();
-	}
 	$scope.epidemic = function(){
 		audio.pause();
 		audio.currentTime = 0;
@@ -448,7 +441,12 @@ app.controller('gameController',['$scope',function($scope){
 		$scope.show = 665;
 		currentInfectDeck++;
 		$scope.currentInfectCard = "img/InfectionCards/infectionDiscardPlaceholder.png";
-		$scope.forecastCount = 0;
+	}
+	$scope.panic = function(){
+		$scope.show = 666;
+		scream.pause();
+		scream.currentTime = 0;
+		audio.play();
 	}
 	$scope.epidemicFinish = function(){
 		$scope.show = 0;
@@ -508,6 +506,7 @@ app.controller('gameController',['$scope',function($scope){
 			}
 			$scope.forecastStart = 0;
 			tempCount = 6;
+			$scope.forecastCount = 0;
 		}
 		if($scope.contingency===0){
 			for(var i=0;i<6;i++){
@@ -518,8 +517,7 @@ app.controller('gameController',['$scope',function($scope){
 				}
 			}
 			$scope.discardCard();
-		}
-		if($scope.contingency===1){
+		}else{
 			$scope.contingencyCard = null;
 			$scope.contingency = 0;
 			$scope.updatePlayers();
@@ -570,10 +568,10 @@ app.controller('gameController',['$scope',function($scope){
 // Draw Infection Cards. When a random number is drawn for the selection of an infection card, that card
 // will go to the end of the infection deck, which is a linked list, the current activeInfectDeck
 // will decrease by one, and the next activeInfectDeck will increase by one. When an epidemic occurs, the
-// currentInfectDeck is increased by one, and so drawInfect() source of cards becomes the former discard pile.
-// This simulates a shuffling of the infect discard pile and placing it on top of the draw pile. drawInfect()
-// will then draw a random number (0-activeInfectDeck[currentInfectDeck]) and will add the values of all
-// previous activeInfectDecks to come up with the drawn card.
+// currentInfectDeck is increased by one, and so the source of cards for drawInfect()  becomes the former 
+// discard pile. This simulates a shuffling of the infect discard pile and placing it on top of the draw 
+// pile. drawInfect() will then draw a random number (0-activeInfectDeck[currentInfectDeck]) and will add 
+// the size of all previous activeInfectDecks to come up with the drawn card.
 	$scope.drawInfect = function(){
 		if(activeInfectDeck[currentInfectDeck]===0){
 			activeInfectDeck[currentInfectDeck] = activeInfectDeck[currentInfectDeck+1];
@@ -644,6 +642,7 @@ app.controller('gameController',['$scope',function($scope){
 		$scope.currentCityButton = city;
 		$scope.show = 100;
 	}
+// Disease cube values will disappear if they equal zero;
 	$scope.addCube = function(cubeAction){
 		if(cubeAction<4){
 			var cubePosition = $scope.currentCityButton*4+cubeAction;
